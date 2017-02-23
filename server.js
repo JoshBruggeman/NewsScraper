@@ -14,14 +14,14 @@ var cheerio = require('cheerio');
 
 // Make a request call to grab the HTML body from the site of your choice
 
-request("https://news.ycombinator.com/", function(error,response,html){
+request("https://www.reddit.com/r/news/", function(error,response,html){
 
 
 	var $ = cheerio.load(html);
 
 	var result = [];
 
-	$("a.storylink").each(function(i, element) {
+	$("a.title").each(function(i, element) {
 
 		var title = $(this).text();
 
