@@ -1,36 +1,81 @@
-/* Scraper Template  (18.10)
- * ========================= */
+var express = require("express");
+var bodyParser = require("body-parser");
+var logger = require("morgan");
+var mongoose = require("mongoose");
+// Mongoose mpromise deprecated - use bluebird promises
+var Promise = require("bluebird");
 
-// Students: Using this skeleton, the cheerio documentation,
-// and what you've learned in class so far, scrape a website
-// of your choice, save it in a result array, and log it to the console.
+mongoose.Promise = Promise;
 
-// Dependencies:
-
-// Snatches HTML from URLs
-var request = require('request');
-// Scrapes our HTML
-var cheerio = require('cheerio');
-
-// Make a request call to grab the HTML body from the site of your choice
-
-request("https://www.reddit.com/r/news/", function(error,response,html){
+// Here's where we establish a connection to the collection
+// We bring the model in like any old module
+// Most of the magic with mongoose happens there
+//
+// Example gets saved as a class, so we can create new Example objects
+// and send them as validated, formatted data to our mongoDB collection.
+var Example = require("./userModel.js");
 
 
-	var $ = cheerio.load(html);
+// Initialize Express
+var app = express();
 
-	var result = [];
+// Configure app with morgan and body parser
+app.use(logger("dev"));
+app.use(bodyParser.urlencoded({
+  extended: false
+}));
 
-	$("a.title").each(function(i, element) {
+// Static file support with public folder
+app.use(express.static("public"));
 
-		var title = $(this).text();
 
-		var link = $(element).children().attr("href");
+// Database configuration for mongoose
+// db: week18day3mongoose
+mongoose.connect("mongodb://localhost/week18day3mongoose");
+// Hook mongoose connection to db
+var db = mongoose.connection;
 
-		result.push({
-			title:title, 
-			link: link
-		});
-	});
-	console.log(result);
+// Log any mongoose errors
+db.on("error", function(error) {
+  console.log("Mongoose Error: ", error);
+});
+
+// Log a success message when we connect to our mongoDB collection with no issues
+db.once("open", function() {
+  console.log("Mongoose connection successful.");
+});
+
+
+// Routes
+// ======
+
+// Simple index route
+app.get("/", function(req, res) {
+  res.send(index.html);
+});
+
+// Route to post our form submission to mongoDB via mongoose
+app.post("/submit", function(req, res) {
+
+  // We use the "Example" class we defined above to check our req.body against our user model
+  var user = new Example(req.body);
+
+  // With the new "Example" object created, we can save our data to mongoose
+  // Notice the different syntax. The magic happens in userModel.js
+  user.save(function(error, doc) {
+    // Send any errors to the browser
+    if (error) {
+      res.send(error);
+    }
+    // Otherwise, send the new doc to the browser
+    else {
+      res.send(doc);
+    }
+  });
+});
+
+
+// Listen on port 3000
+app.listen(3000, function() {
+  console.log("App running on port 3000!");
 });
